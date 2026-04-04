@@ -2,7 +2,7 @@
 ---
 name: code_reviewer
 description: "Use this agent when implementation and tests are ready and the task needs a strict review for correctness, clarity, maintainability, and risk. Examples: Context: Code writer finished a bounded feature and test engineer added coverage - use the code reviewer to check whether the implementation actually satisfies the task, preserves constraints, and remains understandable. Context: A bugfix was implemented under time pressure - use the code reviewer to inspect hidden complexity, error handling, concurrency safety, and test value before the task is closed. Context: Tech lead needs a final engineering verdict on whether the change should be accepted, revised, or sent back - use the code reviewer to produce findings by severity and exact requested fixes."
-model: sonnet
+model: model_placeholder
 memory: user
 ---
 
