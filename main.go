@@ -12,18 +12,28 @@ import (
 )
 
 var (
-	src    = flag.String("src", "./agents", "source directory with agent markdown files")
-	dst    = flag.String("dst", "", "destination directory for agents")
-	system = flag.String("system", "", "target system")
+	src           = flag.String("src", "./agents", "source directory with agent markdown files")
+	dst           = flag.String("dst", "", "destination directory for agents")
+	system        = flag.String("system", "", "target system")
+	copilotMapper = map[string]string{
+		"tech_lead":       "gpt-5.4",
+		"code_reviewer":   "gpt-5.4",
+		"code_researcher": "claude-sonnet-4.6",
+		"code_writer":     "claude-sonnet-4.6",
+		"test_engineer":   "gpt-5.4-mini",
+	}
+	opencodeMapper = map[string]string{
+		"tech_lead":       "openai/gpt-5.4",
+		"code_reviewer":   "openai/gpt-5.4",
+		"code_researcher": "claude-sonnet-4.6",
+		"code_writer":     "claude-sonnet-4.6",
+		"test_engineer":   "openai/gpt-5.4-mini",
+	}
+	modelMapper = map[string]map[string]string{
+		"copilot":  copilotMapper,
+		"opencode": opencodeMapper,
+	}
 )
-
-var copilotMapper = map[string]string{
-	"tech_lead":       "gpt-5.4",
-	"code_reviewer":   "gpt-5.4",
-	"code_researcher": "claude-sonnet-4.6",
-	"code_writer":     "claude-sonnet-4.6",
-	"test_engineer":   "gpt-5.4-mini",
-}
 
 func main() {
 	flag.Parse()
@@ -66,7 +76,7 @@ func run(srcDir, dstDir, system string) error {
 
 		srcPath := filepath.Join(srcDir, name)
 		agentName := strings.TrimSuffix(name, ".md")
-		model := modelForAgent(agentName)
+		model := modelForAgent(agentName, system)
 
 		content, errR := os.ReadFile(srcPath)
 		if errR != nil {
@@ -93,16 +103,17 @@ func run(srcDir, dstDir, system string) error {
 }
 
 func prepareContent(content []byte, model, system string) []byte {
-	if system == "copilot" {
-		res := bytes.ReplaceAll(content, []byte("model_placeholder"), []byte(model))
-		res = bytes.ReplaceAll(res, []byte("memory: user"), []byte(""))
-		return res
-	}
-	return content
+	res := bytes.ReplaceAll(content, []byte("model_placeholder"), []byte(model))
+	res = bytes.ReplaceAll(res, []byte("memory: user"), []byte(""))
+	return res
 }
 
-func modelForAgent(agentName string) string {
-	if model, ok := copilotMapper[agentName]; ok {
+func modelForAgent(agentName, system string) string {
+	modelMapperForSystem, ok := modelMapper[system]
+	if !ok {
+		log.Fatalf("model mapper for system %q not found", system)
+	}
+	if model, ok := modelMapperForSystem[agentName]; ok {
 		return model
 	}
 	log.Fatalf("model for agent %q not found", agentName)
