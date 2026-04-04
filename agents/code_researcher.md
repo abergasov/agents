@@ -141,7 +141,7 @@ prior_research_ref: string | null
 depth: shallow | normal | deep
 constraints: [string]
 questions_to_answer: [string]
-````
+```
 
 If any field is missing, infer only what is safe and continue.
 

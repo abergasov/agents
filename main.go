@@ -18,11 +18,11 @@ var (
 )
 
 var copilotMapper = map[string]string{
-	"tech_lead":       "GPT-5.4",
-	"code_reviewer":   "GPT-5.4",
-	"code_researcher": "Claude Sonnet 4.6",
-	"code_writer":     "Claude Sonnet 4.6",
-	"test_engineer":   "GPT-5.4 mini",
+	"tech_lead":       "gpt-5.4",
+	"code_reviewer":   "gpt-5.4",
+	"code_researcher": "claude-sonnet-4.6",
+	"code_writer":     "claude-sonnet-4.6",
+	"test_engineer":   "gpt-5.4-mini",
 }
 
 func main() {
@@ -34,12 +34,7 @@ func main() {
 		log.Fatal("target system required")
 	}
 
-	home, err := os.UserHomeDir()
-	if err != nil {
-		log.Fatal("failed to get user home directory", err)
-	}
-
-	if err = run(*src, filepath.Join(home, *dst), *system); err != nil {
+	if err := run(*src, *dst, *system); err != nil {
 		log.Fatal("failed to run", err)
 	}
 }
@@ -77,9 +72,7 @@ func run(srcDir, dstDir, system string) error {
 		if errR != nil {
 			return fmt.Errorf("read %q: %w", srcPath, errR)
 		}
-
-		updated := bytes.ReplaceAll(content, []byte("model_placeholder"), []byte(model))
-
+		updated := prepareContent(content, model, system)
 		dstName := normalizeAgentFileName(name, system)
 		dstPath := filepath.Join(dstDir, dstName)
 
@@ -99,6 +92,15 @@ func run(srcDir, dstDir, system string) error {
 	return nil
 }
 
+func prepareContent(content []byte, model, system string) []byte {
+	if system == "copilot" {
+		res := bytes.ReplaceAll(content, []byte("model_placeholder"), []byte(model))
+		res = bytes.ReplaceAll(res, []byte("memory: user"), []byte(""))
+		return res
+	}
+	return content
+}
+
 func modelForAgent(agentName string) string {
 	if model, ok := copilotMapper[agentName]; ok {
 		return model
@@ -108,6 +110,7 @@ func modelForAgent(agentName string) string {
 }
 
 func normalizeAgentFileName(name, system string) string {
+	return name // return as for claude, copilot can extract them
 	if system == "copilot" {
 		return strings.ReplaceAll(name, ".md", ".agent.md")
 	}

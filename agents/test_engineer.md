@@ -146,7 +146,7 @@ changed_files: [string]
 changed_symbols: [string]
 focus_areas: [string]
 non_goals: [string]
-````
+```
 
 You may also receive reviewer feedback asking for stronger coverage.
 
