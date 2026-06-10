@@ -12,7 +12,6 @@ import (
 )
 
 var (
-	src           = flag.String("src", "./agents", "source directory with agent markdown files")
 	dst           = flag.String("dst", "", "destination directory for agents")
 	system        = flag.String("system", "", "target system")
 	copilotMapper = map[string]string{
@@ -25,8 +24,8 @@ var (
 	opencodeMapper = map[string]string{
 		"tech_lead":       "openai/gpt-5.4",
 		"code_reviewer":   "openai/gpt-5.4",
-		"code_researcher": "claude-sonnet-4.6",
-		"code_writer":     "claude-sonnet-4.6",
+		"code_researcher": "claude/sonnet-4.6",
+		"code_writer":     "claude/sonnet-4.6",
 		"test_engineer":   "openai/gpt-5.4-mini",
 	}
 	modelMapper = map[string]map[string]string{
@@ -44,13 +43,65 @@ func main() {
 		log.Fatal("target system required")
 	}
 
-	if err := run(*src, *dst, *system); err != nil {
-		log.Fatal("failed to run", err)
+	if err := copyAgents("./agents", *dst, *system); err != nil {
+		log.Fatal("failed to run agents", err)
+	}
+	if err := copySkills("./skills", *dst, *system); err != nil {
+		log.Fatal("failed to run skills", err)
 	}
 }
 
-func run(srcDir, dstDir, system string) error {
-	println(fmt.Sprintf("Copying %s to %s", srcDir, dstDir))
+func copySkills(srcDir, dstDir, system string) error {
+	dstDir += "/skills"
+	println(fmt.Sprintf("Copying skills %s to %s", srcDir, dstDir))
+	entries, err := os.ReadDir(srcDir)
+	if err != nil {
+		return err
+	}
+	if err = os.RemoveAll(dstDir); err != nil {
+		return fmt.Errorf("remove destination dir %q: %w", dstDir, err)
+	}
+	if err = os.MkdirAll(dstDir, 0o755); err != nil {
+		return fmt.Errorf("create destination dir %q: %w", dstDir, err)
+	}
+
+	var copied int
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		name := entry.Name()
+		if !strings.HasSuffix(name, ".md") {
+			continue
+		}
+		srcPath := filepath.Join(srcDir, name)
+		skillName := strings.TrimSuffix(name, ".md")
+		content, errR := os.ReadFile(srcPath)
+		if errR != nil {
+			return fmt.Errorf("read %q: %w", srcPath, errR)
+		}
+		if err := os.MkdirAll(filepath.Join(dstDir, skillName), 0o755); err != nil {
+			return fmt.Errorf("mkdir %q: %w", filepath.Join(dstDir, skillName), err)
+		}
+		dstPath := filepath.Join(dstDir, skillName, "SKILL.md")
+		if err = os.WriteFile(dstPath, content, fs.FileMode(0o644)); err != nil {
+			return fmt.Errorf("write %q: %w", dstPath, err)
+		}
+
+		fmt.Printf("%s -> %s\n", srcPath, dstPath)
+		copied++
+	}
+	if copied == 0 {
+		return fmt.Errorf("no .md agent files found in %q", srcDir)
+	}
+
+	fmt.Printf("done: %d agent(s) adopted\n", copied)
+	return nil
+}
+
+func copyAgents(srcDir, dstDir, system string) error {
+	dstDir += "/agents"
+	println(fmt.Sprintf("Copying agents %s to %s", srcDir, dstDir))
 	entries, err := os.ReadDir(srcDir)
 	if err != nil {
 		return fmt.Errorf("read source dir %q: %w", srcDir, err)

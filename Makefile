@@ -1,5 +1,5 @@
 adopt_copilot: ## Copy agent files to ~/.copilot/agents with model overrides
-	go run main.go -src ./agents -dst ~/.claude/agents -system copilot
+	go run main.go -dst ~/.claude -system copilot
 
 adopt_opencode: ## Copy agent files to ~/.opencode/agents with model overrides
-	go run main.go -src ./agents -dst ~/.opencode/agents -system opencode
+	go run main.go -dst ~/.opencode -system opencode
