@@ -17,6 +17,9 @@ permissions:
     "grep": allow
     "head": allow
     "tail": allow
+  skill:
+    "code-review": allow
+    "*": deny
 ---
 
 # code_reviewer

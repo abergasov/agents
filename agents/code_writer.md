@@ -5,6 +5,10 @@ agent: Writer
 context: fork
 model: model_placeholder
 mode: subagent
+permissions:
+  skill:
+    "scoped-implementation": allow
+    "*": deny
 memory: user
 ---
 
@@ -534,4 +538,3 @@ Write less.
 Change less.
 Break less.
 Explain exactly what changed.
-

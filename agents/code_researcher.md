@@ -13,6 +13,9 @@ permissions:
     "grep": allow
     "head": allow
     "tail": allow
+  skill:
+    "repo-research": allow
+    "*": deny
 memory: user
 ---
 
@@ -490,4 +493,3 @@ Your output must be good enough that `tech_lead` can decide whether planning can
 If the evidence is weak, say it.
 
 Do not cover weakness with words.
-

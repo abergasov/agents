@@ -68,6 +68,15 @@ func copySkills(srcDir, dstDir, system string) error {
 	var copied int
 	for _, entry := range entries {
 		if entry.IsDir() {
+			skillName := entry.Name()
+			srcPath := filepath.Join(srcDir, skillName)
+			dstPath := filepath.Join(dstDir, skillName)
+			if err := copyDir(srcPath, dstPath); err != nil {
+				return err
+			}
+
+			fmt.Printf("%s -> %s\n", srcPath, dstPath)
+			copied++
 			continue
 		}
 		name := entry.Name()
@@ -92,10 +101,50 @@ func copySkills(srcDir, dstDir, system string) error {
 		copied++
 	}
 	if copied == 0 {
-		return fmt.Errorf("no .md agent files found in %q", srcDir)
+		return fmt.Errorf("no skills found in %q", srcDir)
 	}
 
-	fmt.Printf("done: %d agent(s) adopted\n", copied)
+	fmt.Printf("done: %d skill(s) adopted\n", copied)
+	return nil
+}
+
+func copyDir(srcDir, dstDir string) error {
+	if err := os.MkdirAll(dstDir, 0o755); err != nil {
+		return fmt.Errorf("create destination dir %q: %w", dstDir, err)
+	}
+	return filepath.WalkDir(srcDir, func(path string, d fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		relPath, err := filepath.Rel(srcDir, path)
+		if err != nil {
+			return fmt.Errorf("relative path for %q: %w", path, err)
+		}
+		dstPath := filepath.Join(dstDir, relPath)
+		if d.IsDir() {
+			if relPath == "." {
+				return nil
+			}
+			if err := os.MkdirAll(dstPath, 0o755); err != nil {
+				return fmt.Errorf("mkdir %q: %w", dstPath, err)
+			}
+			return nil
+		}
+		return copyFile(path, dstPath)
+	})
+}
+
+func copyFile(srcPath, dstPath string) error {
+	content, err := os.ReadFile(srcPath)
+	if err != nil {
+		return fmt.Errorf("read %q: %w", srcPath, err)
+	}
+	if err := os.MkdirAll(filepath.Dir(dstPath), 0o755); err != nil {
+		return fmt.Errorf("mkdir %q: %w", filepath.Dir(dstPath), err)
+	}
+	if err := os.WriteFile(dstPath, content, fs.FileMode(0o644)); err != nil {
+		return fmt.Errorf("write %q: %w", dstPath, err)
+	}
 	return nil
 }
 
@@ -156,6 +205,9 @@ func copyAgents(srcDir, dstDir, system string) error {
 func prepareContent(content []byte, model, system string) []byte {
 	res := bytes.ReplaceAll(content, []byte("model_placeholder"), []byte(model))
 	res = bytes.ReplaceAll(res, []byte("memory: user"), []byte(""))
+	if system == "opencode" {
+		res = bytes.ReplaceAll(res, []byte("permissions:"), []byte("permission:"))
+	}
 	return res
 }
 
@@ -172,10 +224,5 @@ func modelForAgent(agentName, system string) string {
 }
 
 func normalizeAgentFileName(name, system string) string {
-	return name // return as for claude, copilot can extract them
-	if system == "copilot" {
-		return strings.ReplaceAll(name, ".md", ".agent.md")
-	}
-	log.Fatal("unknown system name", system)
-	return ""
+	return name
 }

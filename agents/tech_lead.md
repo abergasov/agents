@@ -7,6 +7,10 @@ model: model_placeholder
 memory: user
 permissions:
   edit: deny
+  skill:
+    "repo-research": allow
+    "implementation-plan": allow
+    "*": deny
 ---
 
 # tech_lead
@@ -623,4 +627,3 @@ Your output must let the system answer three questions at any moment:
 * is the work actually done
 
 If the answer to any of these is unclear, your job is not finished.
-
