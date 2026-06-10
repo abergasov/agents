@@ -2,14 +2,19 @@
 name: code_researcher
 description: "Use this agent when you need to inspect an existing codebase for a specific task and produce a grounded research brief before planning or implementation. Examples: Context: User asks 'find where publish flow is implemented and what can break if I change peer selection' - use the researcher to locate relevant files, symbols, invariants, and risks. Context: User says 'understand how auth callback works in this repo before we modify it' - use the researcher to trace entrypoints, configs, handlers, and current behavior. Context: Before implementation, tech lead needs task-scoped repo analysis with relevant files, execution flow, constraints, unknowns, and confidence - use the researcher to generate that structured brief."
 model: model_placeholder
-tools: 
-  write: false
-  edit: false
-  patch: false
-  multiedit: false
+mode: subagent
 permissions:
   edit: deny
   bash: 
+    "*": ask
+    "cat": allow
+    "ls": allow
+    "find": allow
+    "grep": allow
+    "head": allow
+    "tail": allow
+  skill:
+    "repo-research": allow
     "*": deny
 memory: user
 ---
@@ -488,4 +493,3 @@ Your output must be good enough that `tech_lead` can decide whether planning can
 If the evidence is weak, say it.
 
 Do not cover weakness with words.
-

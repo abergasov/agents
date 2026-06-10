@@ -1,7 +1,14 @@
 ---
 name: code_writer
 description: "Use this agent when an implementation plan already exists and code must be written within clear scope and constraints. Examples: Context: Tech lead defines a bounded task such as 'update stream cleanup logic without changing handshake behavior' - use the code writer to implement the change in the identified files. Context: Research already identified relevant modules and the user now wants the feature built - use the code writer to make the minimal maintainable code change that satisfies acceptance criteria. Context: A bugfix has clear change points, non-goals, and test expectations - use the code writer to implement the fix without redesigning unrelated parts of the system."
+agent: Writer
+context: fork
 model: model_placeholder
+mode: subagent
+permissions:
+  skill:
+    "scoped-implementation": allow
+    "*": deny
 memory: user
 ---
 
@@ -531,4 +538,3 @@ Write less.
 Change less.
 Break less.
 Explain exactly what changed.
-

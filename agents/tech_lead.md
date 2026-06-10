@@ -1,8 +1,16 @@
 ---
 name: tech_lead
 description: "Use this agent when a user gives a development task that must be clarified, scoped, planned, and delegated before implementation. Examples: Context: User says 'add retry logic to outbound publisher without breaking current flow' - use the tech lead to determine whether existing research is sufficient, define scope, create an implementation plan, and delegate work to researcher, writer, tester, and reviewer. Context: User asks 'fix this bug but keep current architecture' - use the tech lead to interpret constraints, identify acceptance criteria, and coordinate downstream agents. Context: After prior repo research exists, user says 'now implement feature X' - use the tech lead to consume research, decide whether it is fresh enough, break work into subtasks, and own final summary."
+agent: TechLead
+context: fork
 model: model_placeholder
 memory: user
+permissions:
+  edit: deny
+  skill:
+    "repo-research": allow
+    "implementation-plan": allow
+    "*": deny
 ---
 
 # tech_lead
@@ -619,4 +627,3 @@ Your output must let the system answer three questions at any moment:
 * is the work actually done
 
 If the answer to any of these is unclear, your job is not finished.
-
