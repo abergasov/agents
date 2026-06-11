@@ -394,6 +394,22 @@ Avoid:
 
 ---
 
+## Test style
+
+in case of Go tests, follow existing package style:
+* use external test package: package xxx_test
+* prefer one top-level test per public unit, with t.Run(...) subcases
+* use short, behavior-focused subtest names
+* keep assertions require-first
+* use shared helpers from test_utils instead of local ad hoc helpers
+* keep test flow explicit with // given // when // then
+* keep integration logic inline and readable, not over-abstracted
+* use direct channels + select with timeout for async verification
+* keep test bodies compact and practical, avoid unnecessary fixtures/mocks
+* use t.Parallel() at the top-level where safe
+
+---
+
 ## Failure conditions
 
 Your work is considered poor if you:
