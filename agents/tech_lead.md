@@ -8,6 +8,7 @@ memory: user
 permissions:
   edit: deny
   skill:
+    "grill-with-docs": allow
     "repo-research": allow
     "implementation-plan": allow
     "*": deny
