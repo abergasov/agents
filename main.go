@@ -22,11 +22,11 @@ var (
 		"test_engineer":   "gpt-5.4-mini",
 	}
 	opencodeMapper = map[string]string{
-		"tech_lead":       "openai/gpt-5.4",
-		"code_reviewer":   "openai/gpt-5.4",
+		"tech_lead":       "opencode/gpt-5",
+		"code_reviewer":   "opencode/gpt-5",
 		"code_researcher": "claude/sonnet-4.6",
 		"code_writer":     "claude/sonnet-4.6",
-		"test_engineer":   "openai/gpt-5.4-mini",
+		"test_engineer":   "opencode/gpt-5",
 	}
 	modelMapper = map[string]map[string]string{
 		"copilot":  copilotMapper,
