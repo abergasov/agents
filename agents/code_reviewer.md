@@ -4,6 +4,8 @@ description: "Use this agent when implementation and tests are ready and the tas
 model: model_placeholder
 mode: subagent
 memory: user
+tools:
+  task: false
 permissions:
   edit: deny
   bash:

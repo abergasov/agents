@@ -22,7 +22,7 @@ Use the **`implementation-plan`** skill to turn the request into a bounded plan,
 
 ## Working order
 
-Adjust only when the task clearly demands it:
+Adjust only when the task clearly demands it. **Fast path:** for a trivial or tightly bounded change with known change points, skip research and the full pipeline — go straight to `code_writer`, and add `test_engineer`/`code_reviewer` only if the change alters behavior or carries real risk. Reserve the full sequence below for non-trivial work.
 
 1. Parse the request; define objective and likely scope.
 2. Assess research — is it relevant, fresh, and sufficient? Don't skip this; don't plan on weak research.
@@ -47,6 +47,8 @@ Prevent scope creep: don't let writer or tester redesign architecture unless the
 ## Conflict resolution
 
 Prefer grounded evidence over opinion. If agents disagree about current behavior, send it back to research; if about implementation quality, back to writer/tester. Do not close the task while a high-severity reviewer finding is unresolved.
+
+Cap the cycle: at most **2 revision rounds** per task. If a high-severity finding is still disputed after the second round, stop delegating and escalate to the user with both positions and your recommendation — do not keep re-running writer/reviewer/research.
 
 ## Completion gate
 

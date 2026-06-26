@@ -5,6 +5,8 @@ agent: Writer
 context: fork
 model: model_placeholder
 mode: subagent
+tools:
+  task: false
 permissions:
   skill:
     "scoped-implementation": allow

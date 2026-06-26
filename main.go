@@ -26,7 +26,7 @@ var (
 		"code_reviewer":   "opencode/gpt-5",
 		"code_researcher": "claude/sonnet-4.6",
 		"code_writer":     "claude/sonnet-4.6",
-		"test_engineer":   "opencode/gpt-5",
+		"test_engineer":   "claude/haiku-4.5",
 	}
 	claudeMapper = map[string]string{
 		"tech_lead":       "opus",
@@ -254,10 +254,12 @@ func prepareContent(content []byte, agentName, model, system string) []byte {
 
 // claudeFrontmatter rewrites the opencode frontmatter into valid Claude Code
 // agent frontmatter. It drops keys Claude does not understand (agent, context,
-// mode, and the nested permissions block) and injects a `tools` allowlist and
-// `skills` preload from claudeAgentConfig. The tools list enforces the
-// read-only vs. edit-capable boundary; the skills list preloads each agent's
-// skill (per-skill hard deny is not expressible in Claude frontmatter).
+// mode) and the opencode permissions/tools blocks, then injects a `tools`
+// allowlist and `skills` preload from claudeAgentConfig — so the source `tools`
+// block (opencode delegation gate) is rebuilt here, not passed through. The
+// tools list enforces the read-only vs. edit-capable boundary; the skills list
+// preloads each agent's skill (per-skill hard deny is not expressible in Claude
+// frontmatter).
 func claudeFrontmatter(content []byte, agentName string) []byte {
 	text := string(content)
 	if !strings.HasPrefix(text, "---\n") {
@@ -293,7 +295,7 @@ func claudeFrontmatter(content []byte, agentName string) []byte {
 			switch key {
 			case "agent", "context", "mode":
 				continue
-			case "permissions":
+			case "permissions", "tools":
 				skipBlock = true
 				continue
 			}
