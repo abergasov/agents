@@ -26,11 +26,49 @@ var (
 		"code_reviewer":   "opencode/gpt-5",
 		"code_researcher": "claude/sonnet-4.6",
 		"code_writer":     "claude/sonnet-4.6",
-		"test_engineer":   "opencode/gpt-5",
+		"test_engineer":   "claude/haiku-4.5",
+	}
+	claudeMapper = map[string]string{
+		"tech_lead":       "opus",
+		"code_reviewer":   "opus",
+		"code_researcher": "sonnet",
+		"code_writer":     "sonnet",
+		"test_engineer":   "haiku",
+	}
+	// claudeAgentConfig maps the opencode permission intent onto Claude Code
+	// frontmatter. `tools` is an allowlist that enforces the read-only vs.
+	// edit-capable boundary; `skills` preloads each agent's skill at startup.
+	// Per-skill hard deny is not expressible in Claude frontmatter (the Skill
+	// tool is all-or-nothing), so the skill list is a preload binding, not a gate.
+	claudeAgentConfig = map[string]struct {
+		tools  string
+		skills []string
+	}{
+		"tech_lead": {
+			tools:  "Read, Grep, Glob, Bash, Skill, Agent, TodoWrite",
+			skills: []string{"grill-with-docs", "repo-research", "implementation-plan"},
+		},
+		"code_researcher": {
+			tools:  "Read, Grep, Glob, Bash, Skill, TodoWrite",
+			skills: []string{"repo-research"},
+		},
+		"code_writer": {
+			tools:  "Read, Write, Edit, Grep, Glob, Bash, Skill, TodoWrite",
+			skills: []string{"scoped-implementation"},
+		},
+		"code_reviewer": {
+			tools:  "Read, Grep, Glob, Bash, Skill, TodoWrite",
+			skills: []string{"code-review"},
+		},
+		"test_engineer": {
+			tools:  "Read, Write, Edit, Grep, Glob, Bash, Skill, TodoWrite",
+			skills: []string{"golang-tests"},
+		},
 	}
 	modelMapper = map[string]map[string]string{
 		"copilot":  copilotMapper,
 		"opencode": opencodeMapper,
+		"claude":   claudeMapper,
 	}
 )
 
@@ -182,7 +220,7 @@ func copyAgents(srcDir, dstDir, system string) error {
 		if errR != nil {
 			return fmt.Errorf("read %q: %w", srcPath, errR)
 		}
-		updated := prepareContent(content, model, system)
+		updated := prepareContent(content, agentName, model, system)
 		dstName := normalizeAgentFileName(name, system)
 		dstPath := filepath.Join(dstDir, dstName)
 
@@ -202,13 +240,80 @@ func copyAgents(srcDir, dstDir, system string) error {
 	return nil
 }
 
-func prepareContent(content []byte, model, system string) []byte {
+func prepareContent(content []byte, agentName, model, system string) []byte {
 	res := bytes.ReplaceAll(content, []byte("model_placeholder"), []byte(model))
 	res = bytes.ReplaceAll(res, []byte("memory: user"), []byte(""))
 	if system == "opencode" {
 		res = bytes.ReplaceAll(res, []byte("permissions:"), []byte("permission:"))
 	}
+	if system == "claude" {
+		res = claudeFrontmatter(res, agentName)
+	}
 	return res
+}
+
+// claudeFrontmatter rewrites the opencode frontmatter into valid Claude Code
+// agent frontmatter. It drops keys Claude does not understand (agent, context,
+// mode) and the opencode permissions/tools blocks, then injects a `tools`
+// allowlist and `skills` preload from claudeAgentConfig — so the source `tools`
+// block (opencode delegation gate) is rebuilt here, not passed through. The
+// tools list enforces the read-only vs. edit-capable boundary; the skills list
+// preloads each agent's skill (per-skill hard deny is not expressible in Claude
+// frontmatter).
+func claudeFrontmatter(content []byte, agentName string) []byte {
+	text := string(content)
+	if !strings.HasPrefix(text, "---\n") {
+		return content
+	}
+	end := strings.Index(text[4:], "\n---")
+	if end == -1 {
+		return content
+	}
+	fmEnd := 4 + end
+	front := text[4:fmEnd]
+	rest := text[fmEnd:]
+
+	var out []string
+	skipBlock := false
+	for _, line := range strings.Split(front, "\n") {
+		trimmed := strings.TrimSpace(line)
+		indented := len(line) > 0 && (line[0] == ' ' || line[0] == '\t')
+		if skipBlock {
+			if indented || trimmed == "" {
+				continue
+			}
+			skipBlock = false
+		}
+		if trimmed == "" {
+			continue
+		}
+		if !indented {
+			key := trimmed
+			if i := strings.Index(key, ":"); i != -1 {
+				key = key[:i]
+			}
+			switch key {
+			case "agent", "context", "mode":
+				continue
+			case "permissions", "tools":
+				skipBlock = true
+				continue
+			}
+		}
+		out = append(out, line)
+	}
+
+	if cfg, ok := claudeAgentConfig[agentName]; ok {
+		out = append(out, "tools: "+cfg.tools)
+		if len(cfg.skills) > 0 {
+			out = append(out, "skills:")
+			for _, s := range cfg.skills {
+				out = append(out, "  - "+s)
+			}
+		}
+	}
+
+	return []byte("---\n" + strings.Join(out, "\n") + rest)
 }
 
 func modelForAgent(agentName, system string) string {
